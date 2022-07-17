@@ -9,11 +9,12 @@ pages = set()
 random.seed(1)
 
 
+# Retrieve a list of all internal links found on a page.
 def get_internal_links(bs: BeautifulSoup, include_url):
     include_url = '{}://{}'.format(urlparse(include_url).scheme, urlparse(include_url).netloc)
     internal_links = []
-
-    for link in bs.find_all('a', href=re.compile('^(/|.*'+include_url+')')):
+    for link in bs.find_all('a', href=re.compile('^(/|.*' + include_url + ')')):
+        print(link)
         if link.attrs['href'] is not None:
             if link.attrs['href'] not in internal_links:
                 if link.attrs['href'].startswith('/'):
@@ -26,8 +27,7 @@ def get_internal_links(bs: BeautifulSoup, include_url):
 def get_external_links(bs: BeautifulSoup, exclude_url):
     external_links = []
 
-    for link in bs.find_all('a'):
-        href = re.compile('^(http|www)((?!' + exclude_url + ').)*$')
+    for link in bs.find_all('a', href=re.compile('^(http|www)((?!' + exclude_url + ').)*$')):
         if link.attrs['href'] is not None:
             if link.attrs['href'] not in external_links:
                 external_links.append(link.attrs['href'])
@@ -42,6 +42,20 @@ def get_random_external_link(start_page):
         print('No external links.')
         domain = '{}://{}'.format(urlparse(start_page).scheme, urlparse(start_page).netloc)
         internal_links = get_internal_links(bs, domain)
-        return get_random_external_link(internal_links[random.randint(0, len(internal_links)-1)])
+        if len(internal_links) == 0:
+            print("No internal links.")
+            return None
+        else:
+            return get_random_external_link(internal_links[random.randint(0, len(internal_links) - 1)])
     else:
-        return external_links[random.randint(0, len(external_links)-1)]
+        return external_links[random.randint(0, len(external_links) - 1)]
+
+
+def follow_external_only(start_page):
+    external_link = get_random_external_link(start_page)
+    print('Random external link: {}'.format(external_link))
+    follow_external_only(external_link)
+
+
+if __name__ == '__main__':
+    follow_external_only('http://oreilly.com')
